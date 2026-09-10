@@ -1,5 +1,13 @@
 # README: Работа с v8unpack и АРМЗакупокИПродаж__release.cfe
 
+## Тех.задание
+
+[Актуальная редакция](https://docs.google.com/document/d/17jK7zyT7pWDc7zmUPWOIJxseA0mP3VPf4aYmWKyIxvk/edit?usp=sharing
+## Диаграммы схемы
+
+[файл диаграм](https://drive.google.com/file/d/1qtIh12pP1lBkmtOTyyz-mF0mACr0Pvhk/view?usp=drive_link)
+[просмотр-редактирование](https://app.diagrams.net/#G1qtIh12pP1lBkmtOTyyz-mF0mACr0Pvhk#%7B%22pageId%22%3A%22MAt_QFkNNtR9Z5gereM2%22%7D)
+
 ## 📌 Назначение
 
 **v8unpack** — это консольная утилита для сборки и распаковки бинарных файлов 1С:Предприятие 8.x (`.cf`, `.cfe`, `.epf`) **без использования технологической платформы 1С**.
