@@ -1,0 +1,697 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Конфигуратор матрицы видимости колонок — Витавто (1С:УНФ)</title>
+<style>
+  :root{
+    --bg:#f5f6f8; --panel:#ffffff; --border:#dbe0e6; --text:#1f2937; --muted:#6b7280;
+    --accent:#2563eb; --accent-dark:#1d4ed8;
+    --green-bg:#d9f2df; --green-bd:#8fd6a4;
+    --yellow-bg:#fdf3d0; --yellow-bd:#e6c766;
+    --gray-bg:#e9ebee; --gray-bd:#c7ccd3;
+    --danger:#dc2626;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:Segoe UI,Arial,sans-serif;font-size:13px;}
+  header.app{position:sticky;top:0;z-index:30;background:var(--panel);border-bottom:1px solid var(--border);padding:10px 16px;}
+  h1{font-size:16px;margin:0 0 2px;}
+  .sub{color:var(--muted);font-size:12px;margin-bottom:8px;}
+
+  .toolbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:6px;}
+  .toolbar .grow{flex:1 1 auto;}
+  input[type=text]{padding:6px 8px;border:1px solid var(--border);border-radius:6px;font-size:13px;width:220px;}
+  button{cursor:pointer;border:1px solid var(--border);background:var(--panel);border-radius:6px;padding:6px 10px;font-size:12px;color:var(--text);}
+  button:hover{background:#eef1f5;}
+  button.primary{background:var(--accent);border-color:var(--accent-dark);color:#fff;}
+  button.primary:hover{background:var(--accent-dark);}
+  button.danger{color:var(--danger);border-color:#f3b4ae;}
+  button.danger:hover{background:#fdeceb;}
+  button.toggle.active{background:var(--accent);color:#fff;border-color:var(--accent-dark);}
+
+  .roles-tabs{display:flex;gap:4px;flex-wrap:wrap;margin-top:8px;}
+  .roles-tabs button{padding:7px 12px;border-radius:6px 6px 0 0;border-bottom:none;}
+  .roles-tabs button.active{background:var(--accent);color:#fff;border-color:var(--accent-dark);}
+
+  .level-toggle{display:flex;border:1px solid var(--border);border-radius:6px;overflow:hidden;}
+  .level-toggle button{border:none;border-radius:0;}
+  .level-toggle button.active{background:var(--accent);color:#fff;}
+
+  .legend{display:flex;gap:16px;align-items:center;color:var(--muted);font-size:11px;padding:6px 16px;flex-wrap:wrap;}
+  .legend .sw{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:4px;vertical-align:-1px;border:1px solid rgba(0,0,0,.15);}
+  .sw.green{background:var(--green-bg);border-color:var(--green-bd);}
+  .sw.yellow{background:var(--yellow-bg);border-color:var(--yellow-bd);}
+  .sw.gray{background:var(--gray-bg);border-color:var(--gray-bd);}
+
+  .bulk-panel{display:none;flex-wrap:wrap;gap:8px;align-items:center;background:#f0f4fa;border:1px solid var(--border);border-radius:8px;padding:8px 10px;margin:8px 16px 0;}
+  .bulk-panel.open{display:flex;}
+  .bulk-panel .grp{display:flex;gap:4px;align-items:center;border-right:1px solid var(--border);padding-right:10px;margin-right:2px;}
+  .bulk-panel .grp:last-child{border-right:none;}
+  .bulk-panel select{padding:5px;border:1px solid var(--border);border-radius:6px;font-size:12px;}
+  .bulk-panel label{color:var(--muted);font-size:11px;}
+
+  .table-wrap{margin:12px 16px 24px;overflow:auto;border:1px solid var(--border);border-radius:8px;background:var(--panel);max-height:72vh;}
+  table{border-collapse:separate;border-spacing:0;min-width:1200px;width:100%;}
+  thead th{position:sticky;top:0;background:#eef1f6;border-bottom:2px solid var(--border);border-left:1px solid var(--border);padding:6px 4px;font-size:11px;font-weight:600;text-align:center;z-index:5;white-space:normal;min-width:118px;}
+  thead th.col-head{position:sticky;left:0;top:0;z-index:6;text-align:left;min-width:250px;background:#eef1f6;}
+  tbody th.row-head{position:sticky;left:0;background:var(--panel);border-right:2px solid var(--border);border-bottom:1px solid var(--border);text-align:left;padding:6px 8px;font-weight:500;min-width:250px;max-width:250px;z-index:4;}
+  tbody th.row-head .id{display:block;color:var(--muted);font-size:10px;font-family:Consolas,monospace;}
+  tbody tr:nth-child(even) th.row-head{background:#fafbfc;}
+  td.matrix-cell{border-left:1px solid var(--border);border-bottom:1px solid var(--border);padding:4px;vertical-align:middle;transition:background-color .1s;}
+  td.matrix-cell.cell-green{background:var(--green-bg);}
+  td.matrix-cell.cell-yellow{background:var(--yellow-bg);}
+  td.matrix-cell.cell-gray{background:var(--gray-bg);}
+  .cell-stack{display:flex;flex-direction:column;gap:3px;align-items:center;}
+  .cell-stack select{width:100%;font-size:10px;padding:2px;border-radius:4px;border:1px solid rgba(0,0,0,.2);}
+  .cell-stack .chk-row{display:flex;justify-content:space-between;width:100%;gap:4px;}
+  .cell-stack label.chk{display:flex;align-items:center;gap:2px;font-size:10px;color:#374151;white-space:nowrap;}
+  .cell-stack input[type=checkbox]{width:13px;height:13px;}
+  select.c-role-for{margin-top:2px;}
+  select.c-role-for[hidden]{display:none;}
+
+  tr.filtered-out{display:none;}
+
+  footer.app{padding:10px 16px 30px;color:var(--muted);font-size:11px;}
+  .badge{display:inline-block;background:#eef1f6;border-radius:4px;padding:2px 6px;font-size:11px;color:var(--muted);}
+  .status-line{padding:4px 16px 0;color:var(--muted);font-size:11px;}
+  #importFile{display:none;}
+</style>
+</head>
+<body>
+
+<header class="app">
+  <h1>Конфигуратор матрицы видимости и редактирования колонок — Витавто (1С:УНФ)</h1>
+  <div class="sub">Прототип для настройки прав «Роль × Статус × Колонка» с сохранением в localStorage браузера. Не подключается к 1С, не содержит реальных данных.</div>
+
+  <div class="toolbar">
+    <div class="level-toggle" id="levelToggle">
+      <button data-level="order" class="active">Уровень статуса: Заказ</button>
+      <button data-level="line">Деталь (строка)</button>
+    </div>
+    <input type="text" id="searchInput" placeholder="Поиск колонки по названию или ID…">
+    <div class="grow"></div>
+    <button id="btnBulk">Массовые операции ▾</button>
+    <button id="btnExport">Экспорт JSON</button>
+    <button id="btnImport">Импорт JSON</button>
+    <input type="file" id="importFile" accept="application/json">
+    <button id="btnReset" class="danger">Сбросить к умолчаниям</button>
+  </div>
+
+  <div class="roles-tabs" id="roleTabs"></div>
+</header>
+
+<div class="bulk-panel" id="bulkPanel">
+  <div class="grp">
+    <label>Видимость (для роли, видимых колонок):</label>
+    <button data-op="show-all">Показать все</button>
+    <button data-op="hide-all">Скрыть все</button>
+  </div>
+  <div class="grp">
+    <label>Редактирование:</label>
+    <button data-op="edit-all">Разрешить редактирование</button>
+    <button data-op="edit-none">Только чтение</button>
+  </div>
+  <div class="grp">
+    <label>Обязательность:</label>
+    <button data-op="req-on">Сделать обязательным</button>
+    <button data-op="req-off">Снять обязательность</button>
+  </div>
+  <div class="grp">
+    <label>Копировать роль →</label>
+    <select id="copyRoleSource"></select>
+    <button id="btnCopyRole">Копировать в текущую</button>
+  </div>
+  <div class="grp">
+    <label>Копировать статус:</label>
+    <select id="copyStatusSource"></select>
+    <span>→</span>
+    <select id="copyStatusTarget"></select>
+    <button id="btnCopyStatus">Копировать</button>
+  </div>
+</div>
+
+<div class="legend">
+  <span><span class="sw green"></span>видно + редактируется</span>
+  <span><span class="sw yellow"></span>видно + только чтение</span>
+  <span><span class="sw gray"></span>скрыто</span>
+  <span class="badge" id="statusLine"></span>
+</div>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr id="headRow"></tr></thead>
+    <tbody id="tableBody"></tbody>
+  </table>
+</div>
+
+<footer class="app">
+  Настройки хранятся в localStorage браузера (ключ <code>vitaauto_column_matrix_v1</code>), не шифруются и не покидают этот компьютер.
+  Для переноса правил в 1С используйте экспорт JSON. При изменении структуры матрицы увеличивайте номер версии в файле.
+</footer>
+
+<script>
+(function(){
+  'use strict';
+
+  var STORAGE_KEY = 'vitaauto_column_matrix_v1';
+  var SCHEMA_VERSION = 1;
+
+  var ROLES = [
+    {id:'manager', title:'Менеджер'},
+    {id:'storekeeper', title:'Кладовщик / Сборщик'},
+    {id:'chief_mechanic', title:'Главный механик'},
+    {id:'admin', title:'Администратор'},
+    {id:'supplier', title:'Поставщик'},
+    {id:'client', title:'Клиент'}
+  ];
+
+  var STATUSES = [
+    {id:'new', title:'Новый'},
+    {id:'ordered', title:'Заказано у поставщика'},
+    {id:'paid', title:'Оплачено'},
+    {id:'in_transit', title:'В пути'},
+    {id:'awaiting_receipt', title:'Ожидаем поступление'},
+    {id:'acceptance', title:'Приемка'},
+    {id:'reserve', title:'Резервирование'},
+    {id:'assembly', title:'Комплектация'},
+    {id:'ready_to_ship', title:'Готово к отгрузке'},
+    {id:'shipped', title:'Отгружено'},
+    {id:'return', title:'Возврат'},
+    {id:'closed', title:'Закрыт'}
+  ];
+
+  var COLUMNS = [
+    {id:'row_number', title:'№ п/п', group:'system'},
+    {id:'shipment_date', title:'Дата отгрузки', group:'auto'},
+    {id:'shipment_number', title:'Номер отгрузки', group:'auto'},
+    {id:'order_date', title:'Дата заказа', group:'auto'},
+    {id:'order_internal_number', title:'№ заказ внутренний наш', group:'auto'},
+    {id:'order_client_number', title:'№ заказ клиент', group:'order_header'},
+    {id:'customer', title:'Заказчик', group:'order_header'},
+    {id:'contract', title:'Договор с заказчиком', group:'order_header'},
+    {id:'service_type', title:'Вид услуги', group:'order_header'},
+    {id:'urgency_fact', title:'Срочность (ФАКТ) / комментарий заказчика', group:'fact'},
+    {id:'vehicle_plate_fact', title:'Машина ГРЗ (ФАКТ)', group:'fact'},
+    {id:'territory_fact', title:'Территория (ФАКТ)', group:'fact'},
+    {id:'name_fact', title:'Наименование (ФАКТ)', group:'fact_editable'},
+    {id:'article_fact', title:'Артикул (ФАКТ)', group:'fact_editable'},
+    {id:'qty_fact', title:'Кол-во (ФАКТ)', group:'fact'},
+    {id:'unit_fact', title:'Ед. изм. (ФАКТ)', group:'fact'},
+    {id:'name', title:'Наименование', group:'nomenclature'},
+    {id:'article', title:'Артикул', group:'nomenclature'},
+    {id:'code_aa', title:'Код А-А / код поставщика', group:'nomenclature'},
+    {id:'unit', title:'Ед. изм.', group:'nomenclature'},
+    {id:'qty', title:'Кол-во', group:'nomenclature'},
+    {id:'stock_qty', title:'Кол-во в наличии на складе', group:'stock'},
+    {id:'reserve_qty', title:'Кол-во в резерве', group:'stock'},
+    {id:'ordered_in_transit_qty', title:'Кол-во заказанного в пути / свободное', group:'stock'},
+    {id:'batch_fifo', title:'№ партии ФИФО / выбор партии', group:'stock'},
+    {id:'line_status', title:'Статус заявки', group:'status'},
+    {id:'price', title:'Цена', group:'pricing'},
+    {id:'sum', title:'Сумма', group:'pricing'},
+    {id:'payment_form', title:'Форма оплаты', group:'payment'},
+    {id:'rrc', title:'РРЦ', group:'margin_locked'},
+    {id:'paid_status', title:'Оплачено (счёт, оплата, постоплата)', group:'payment'},
+    {id:'coefficient', title:'Коэфф', group:'margin_open'},
+    {id:'extra_field_1', title:'Доп. поле 1', group:'extra'},
+    {id:'extra_field_2', title:'Доп. поле 2', group:'extra'},
+    {id:'supplier', title:'Поставщик', group:'receipt'},
+    {id:'receipt_date', title:'Дата получения', group:'receipt'},
+    {id:'upd_date', title:'Дата УПД', group:'receipt'},
+    {id:'upd_number', title:'№ УПД', group:'receipt'},
+    {id:'supplier_ship_territory', title:'Территория отгрузки поставщиком', group:'receipt'},
+    {id:'comment', title:'Комментарий', group:'comment'}
+  ];
+
+  var EDIT_LABELS = {
+    none:'Не редактируется', all:'Все, кому видно', creator:'Только создатель',
+    admin:'Только админ', role:'Выбранная роль'
+  };
+  var EDIT_VALUES = ['none','all','creator','admin','role'];
+
+  var EARLY_STATUSES = ['new','ordered','paid','in_transit','awaiting_receipt'];
+
+  // ---- Ролевые профили по умолчанию (визуальные группы колонок) ----
+  var ROLE_PROFILES = {
+    manager: {
+      system:{visible:true, editable:'none'}, auto:{visible:true, editable:'none'},
+      order_header:{visible:true, editable:'all'}, fact:{visible:true, editable:'all'},
+      fact_editable:{visible:true, editable:'all'}, nomenclature:{visible:true, editable:'all'},
+      stock:{visible:true, editable:'none'}, status:{visible:true, editable:'none'},
+      pricing:{visible:true, editable:'all'}, payment:{visible:true, editable:'all'},
+      margin_locked:{visible:true, editable:'none'}, margin_open:{visible:true, editable:'all'},
+      extra:{visible:false, editable:'none'}, receipt:{visible:true, editable:'none'},
+      comment:{visible:true, editable:'all'}
+    },
+    storekeeper: {
+      system:{visible:true, editable:'none'}, auto:{visible:true, editable:'none'},
+      order_header:{visible:true, editable:'none'}, fact:{visible:true, editable:'none'},
+      fact_editable:{visible:true, editable:'all'}, nomenclature:{visible:true, editable:'all'},
+      stock:{visible:true, editable:'all'}, status:{visible:true, editable:'none'},
+      pricing:{visible:true, editable:'none'}, payment:{visible:false, editable:'none'},
+      margin_locked:{visible:false, editable:'none'}, margin_open:{visible:false, editable:'none'},
+      extra:{visible:false, editable:'none'}, receipt:{visible:true, editable:'all'},
+      comment:{visible:true, editable:'all'}
+    },
+    admin: {
+      system:{visible:true, editable:'none'}, auto:{visible:true, editable:'all'},
+      order_header:{visible:true, editable:'all'}, fact:{visible:true, editable:'all'},
+      fact_editable:{visible:true, editable:'all'}, nomenclature:{visible:true, editable:'all'},
+      stock:{visible:true, editable:'all'}, status:{visible:true, editable:'all'},
+      pricing:{visible:true, editable:'all'}, payment:{visible:true, editable:'all'},
+      margin_locked:{visible:true, editable:'all'}, margin_open:{visible:true, editable:'all'},
+      extra:{visible:true, editable:'all'}, receipt:{visible:true, editable:'all'},
+      comment:{visible:true, editable:'all'}
+    },
+    supplier: {
+      system:{visible:false, editable:'none'}, auto:{visible:false, editable:'none'},
+      order_header:{visible:false, editable:'none'}, fact:{visible:false, editable:'none'},
+      fact_editable:{visible:false, editable:'none'}, nomenclature:{visible:true, editable:'none'},
+      stock:{visible:false, editable:'none'}, status:{visible:true, editable:'none'},
+      pricing:{visible:true, editable:'none'}, payment:{visible:false, editable:'none'},
+      margin_locked:{visible:false, editable:'none'}, margin_open:{visible:false, editable:'none'},
+      extra:{visible:false, editable:'none'}, receipt:{visible:false, editable:'none'},
+      comment:{visible:true, editable:'all'}
+    },
+    client: {
+      system:{visible:false, editable:'none'}, auto:{visible:true, editable:'none'},
+      order_header:{visible:true, editable:'none'}, fact:{visible:false, editable:'none'},
+      fact_editable:{visible:false, editable:'none'}, nomenclature:{visible:true, editable:'none'},
+      stock:{visible:false, editable:'none'}, status:{visible:true, editable:'none'},
+      pricing:{visible:true, editable:'none'}, payment:{visible:false, editable:'none'},
+      margin_locked:{visible:false, editable:'none'}, margin_open:{visible:false, editable:'none'},
+      extra:{visible:false, editable:'none'}, receipt:{visible:false, editable:'none'},
+      comment:{visible:true, editable:'none'}
+    }
+  };
+  ROLE_PROFILES.chief_mechanic = ROLE_PROFILES.manager;
+
+  var COLUMNS_BY_ID = {};
+  COLUMNS.forEach(function(c){ COLUMNS_BY_ID[c.id] = c; });
+  var ROLE_IDS = ROLES.map(function(r){return r.id;});
+  var STATUS_IDS = STATUSES.map(function(s){return s.id;});
+  var COLUMN_IDS = COLUMNS.map(function(c){return c.id;});
+
+  function enforceConstraints(cell){
+    if (!cell.visible){ cell.editable='none'; cell.required=false; cell.editableRole=null; }
+    if (cell.editable !== 'role') cell.editableRole = null;
+    if (cell.required && cell.editable === 'none') cell.editable = 'all';
+    if (cell.required && !cell.visible) cell.visible = true;
+    return cell;
+  }
+
+  function computeDefaultCell(roleId, colId, statusId){
+    var col = COLUMNS_BY_ID[colId];
+    var profile = ROLE_PROFILES[roleId][col.group];
+    var cell = {visible:profile.visible, editable:profile.editable, required:false, editableRole:null};
+
+    if (roleId === 'storekeeper' && col.group === 'receipt' && EARLY_STATUSES.indexOf(statusId) !== -1){
+      cell.visible = false;
+    }
+    if (roleId === 'manager' && statusId === 'new' && (colId==='name'||colId==='article'||colId==='qty')){
+      cell.required = true;
+    }
+    if (roleId === 'storekeeper' && statusId === 'acceptance' && (colId==='receipt_date'||colId==='upd_number')){
+      cell.required = true;
+    }
+    if (statusId === 'closed' && roleId !== 'admin'){
+      cell.editable = 'none';
+    }
+    return enforceConstraints(cell);
+  }
+
+  function buildDefaultMatrix(){
+    function buildLevel(){
+      var m = {};
+      ROLES.forEach(function(r){
+        m[r.id] = {};
+        STATUSES.forEach(function(s){
+          m[r.id][s.id] = {};
+          COLUMNS.forEach(function(c){
+            m[r.id][s.id][c.id] = computeDefaultCell(r.id, c.id, s.id);
+          });
+        });
+      });
+      return m;
+    }
+    return {order: buildLevel(), line: buildLevel()};
+  }
+
+  function buildDefaultState(){
+    return {
+      version: SCHEMA_VERSION,
+      updatedAt: new Date().toISOString(),
+      settings: {statusLevel:'order', activeRole:'manager'},
+      roles: ROLE_IDS.slice(),
+      statuses: STATUSES.map(function(s){return {id:s.id, title:s.title};}),
+      columns: COLUMNS.map(function(c){return {id:c.id, title:c.title, group:c.group};}),
+      matrix: buildDefaultMatrix()
+    };
+  }
+
+  function validateImport(obj){
+    if (!obj || typeof obj !== 'object') return 'файл не является корректным JSON-объектом';
+    if (obj.version !== SCHEMA_VERSION) return 'неподдерживаемая версия схемы: ' + obj.version;
+    if (!Array.isArray(obj.roles) || !Array.isArray(obj.statuses) || !Array.isArray(obj.columns)) return 'отсутствуют массивы roles/statuses/columns';
+    var roleSet = {}; obj.roles.forEach(function(r){roleSet[r]=true;});
+    for (var i=0;i<ROLE_IDS.length;i++){ if(!roleSet[ROLE_IDS[i]]) return 'отсутствует обязательная роль: '+ROLE_IDS[i]; }
+    for (var j=0;j<obj.roles.length;j++){ if(ROLE_IDS.indexOf(obj.roles[j])===-1) return 'неизвестная роль: '+obj.roles[j]; }
+    var statusSet = {}; obj.statuses.forEach(function(s){ if(!s||!s.id) return; statusSet[s.id]=true; });
+    var colSet = {}; obj.columns.forEach(function(c){ if(!c||!c.id) return; colSet[c.id]=true; });
+    if (!obj.matrix || !obj.matrix.order || !obj.matrix.line) return 'отсутствует matrix.order/matrix.line';
+    var levels = ['order','line'];
+    for (var l=0;l<levels.length;l++){
+      var lvl = obj.matrix[levels[l]];
+      for (var r2=0;r2<obj.roles.length;r2++){
+        var rid = obj.roles[r2];
+        if (!lvl[rid]) return 'в matrix.'+levels[l]+' отсутствует роль '+rid;
+        for (var sid in lvl[rid]){
+          if (!statusSet[sid]) return 'в matrix.'+levels[l]+'.'+rid+' неизвестный статус: '+sid;
+          for (var cid in lvl[rid][sid]){
+            if (!colSet[cid]) return 'в matrix.'+levels[l]+'.'+rid+'.'+sid+' неизвестная колонка: '+cid;
+          }
+        }
+      }
+    }
+    return null;
+  }
+
+  function loadState(){
+    try{
+      var raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return buildDefaultState();
+      var parsed = JSON.parse(raw);
+      var err = validateImport(parsed);
+      if (err){ console.warn('Сохранённая матрица повреждена ('+err+'), используются значения по умолчанию.'); return buildDefaultState(); }
+      if (!parsed.settings) parsed.settings = {statusLevel:'order', activeRole:'manager'};
+      return parsed;
+    }catch(e){
+      return buildDefaultState();
+    }
+  }
+
+  var state = loadState();
+  var activeRole = (state.settings && state.settings.activeRole) || 'manager';
+  if (ROLE_IDS.indexOf(activeRole) === -1) activeRole = 'manager';
+
+  var saveTimer = null;
+  function scheduleSave(){
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(function(){
+      state.updatedAt = new Date().toISOString();
+      state.settings.activeRole = activeRole;
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    }, 300);
+  }
+
+  function currentLevel(){ return state.settings.statusLevel === 'line' ? 'line' : 'order'; }
+  function getColumns(){ return state.columns && state.columns.length ? state.columns : COLUMNS; }
+  function getStatuses(){ return state.statuses && state.statuses.length ? state.statuses : STATUSES; }
+  function roleTitle(id){ var r = ROLES.filter(function(x){return x.id===id;})[0]; return r ? r.title : id; }
+
+  function ensureCell(level, roleId, statusId, colId){
+    var m = state.matrix[level];
+    if (!m[roleId]) m[roleId] = {};
+    if (!m[roleId][statusId]) m[roleId][statusId] = {};
+    if (!m[roleId][statusId][colId]) m[roleId][statusId][colId] = enforceConstraints({visible:true, editable:'none', required:false, editableRole:null});
+    return m[roleId][statusId][colId];
+  }
+
+  function cellClass(cell){
+    if (!cell.visible) return 'cell-gray';
+    if (cell.editable === 'none') return 'cell-yellow';
+    return 'cell-green';
+  }
+
+  // ---------------- Rendering ----------------
+
+  var elRoleTabs = document.getElementById('roleTabs');
+  var elHeadRow = document.getElementById('headRow');
+  var elBody = document.getElementById('tableBody');
+  var elSearch = document.getElementById('searchInput');
+  var elStatusLine = document.getElementById('statusLine');
+  var elLevelToggle = document.getElementById('levelToggle');
+  var elBulkPanel = document.getElementById('bulkPanel');
+  var elCopyRoleSource = document.getElementById('copyRoleSource');
+  var elCopyStatusSource = document.getElementById('copyStatusSource');
+  var elCopyStatusTarget = document.getElementById('copyStatusTarget');
+
+  function renderRoleTabs(){
+    elRoleTabs.innerHTML = ROLES.map(function(r){
+      return '<button data-role="'+r.id+'" class="'+(r.id===activeRole?'active':'')+'">'+r.title+'</button>';
+    }).join('');
+  }
+
+  function renderLevelToggle(){
+    var lvl = currentLevel();
+    elLevelToggle.querySelectorAll('button').forEach(function(b){
+      b.classList.toggle('active', b.dataset.level === lvl);
+    });
+  }
+
+  function renderCopySelectors(){
+    elCopyRoleSource.innerHTML = ROLES.filter(function(r){return r.id!==activeRole;})
+      .map(function(r){return '<option value="'+r.id+'">'+r.title+'</option>';}).join('');
+    var statuses = getStatuses();
+    var opts = statuses.map(function(s){return '<option value="'+s.id+'">'+s.title+'</option>';}).join('');
+    elCopyStatusSource.innerHTML = opts;
+    elCopyStatusTarget.innerHTML = opts;
+  }
+
+  function renderHead(){
+    var statuses = getStatuses();
+    var html = '<th class="col-head">Колонка интерфейса</th>';
+    statuses.forEach(function(s){ html += '<th>'+s.title+'</th>'; });
+    elHeadRow.innerHTML = html;
+  }
+
+  function editSelectHtml(cell){
+    var opts = EDIT_VALUES.map(function(v){
+      return '<option value="'+v+'"'+(cell.editable===v?' selected':'')+'>'+EDIT_LABELS[v]+'</option>';
+    }).join('');
+    return '<select class="c-editable">'+opts+'</select>';
+  }
+
+  function roleForSelectHtml(cell){
+    var opts = ROLES.map(function(r){
+      return '<option value="'+r.id+'"'+(cell.editableRole===r.id?' selected':'')+'>'+r.title+'</option>';
+    }).join('');
+    return '<select class="c-role-for"'+(cell.editable==='role'?'':' hidden')+'>'+opts+'</select>';
+  }
+
+  function renderTable(){
+    var level = currentLevel();
+    var columns = getColumns();
+    var statuses = getStatuses();
+    var rowsHtml = '';
+    columns.forEach(function(col){
+      rowsHtml += '<tr data-col="'+col.id+'"><th class="row-head">'+col.title+'<span class="id">'+col.id+'</span></th>';
+      statuses.forEach(function(st){
+        var cell = ensureCell(level, activeRole, st.id, col.id);
+        rowsHtml += '<td class="matrix-cell '+cellClass(cell)+'" data-status="'+st.id+'" data-col="'+col.id+'">'
+          + '<div class="cell-stack">'
+          +   '<div class="chk-row">'
+          +     '<label class="chk"><input type="checkbox" class="c-visible" '+(cell.visible?'checked':'')+'>Видно</label>'
+          +     '<label class="chk"><input type="checkbox" class="c-required" '+(cell.required?'checked':'')+'>Обяз.</label>'
+          +   '</div>'
+          +   editSelectHtml(cell)
+          +   roleForSelectHtml(cell)
+          + '</div>'
+          + '</td>';
+      });
+      rowsHtml += '</tr>';
+    });
+    elBody.innerHTML = rowsHtml;
+    applySearchFilter();
+    elStatusLine.textContent = 'Роль: ' + roleTitle(activeRole) + ' · Уровень статуса: ' + (level==='order'?'Заказ':'Деталь (строка)') + ' · обновлено ' + new Date(state.updatedAt).toLocaleString('ru-RU');
+  }
+
+  function applySearchFilter(){
+    var q = elSearch.value.trim().toLowerCase();
+    var rows = elBody.querySelectorAll('tr');
+    rows.forEach(function(tr){
+      var colId = tr.dataset.col;
+      var col = COLUMNS_BY_ID[colId] || {title:colId};
+      var match = !q || col.title.toLowerCase().indexOf(q)!==-1 || colId.toLowerCase().indexOf(q)!==-1;
+      tr.classList.toggle('filtered-out', !match);
+    });
+  }
+
+  function filteredColumnIds(){
+    var q = elSearch.value.trim().toLowerCase();
+    return getColumns().filter(function(c){
+      return !q || c.title.toLowerCase().indexOf(q)!==-1 || c.id.toLowerCase().indexOf(q)!==-1;
+    }).map(function(c){return c.id;});
+  }
+
+  function renderAll(){
+    renderRoleTabs();
+    renderLevelToggle();
+    renderCopySelectors();
+    renderHead();
+    renderTable();
+  }
+
+  // ---------------- Events ----------------
+
+  elRoleTabs.addEventListener('click', function(e){
+    var btn = e.target.closest('button[data-role]');
+    if (!btn) return;
+    activeRole = btn.dataset.role;
+    scheduleSave();
+    renderRoleTabs();
+    renderCopySelectors();
+    renderTable();
+  });
+
+  elLevelToggle.addEventListener('click', function(e){
+    var btn = e.target.closest('button[data-level]');
+    if (!btn) return;
+    state.settings.statusLevel = btn.dataset.level;
+    scheduleSave();
+    renderLevelToggle();
+    renderTable();
+  });
+
+  elSearch.addEventListener('input', applySearchFilter);
+
+  elBody.addEventListener('change', function(e){
+    var el = e.target;
+    var td = el.closest('td.matrix-cell');
+    if (!td) return;
+    var statusId = td.dataset.status, colId = td.dataset.col;
+    var level = currentLevel();
+    var cell = ensureCell(level, activeRole, statusId, colId);
+
+    if (el.classList.contains('c-visible')) cell.visible = el.checked;
+    else if (el.classList.contains('c-required')) cell.required = el.checked;
+    else if (el.classList.contains('c-editable')) cell.editable = el.value;
+    else if (el.classList.contains('c-role-for')) cell.editableRole = el.value;
+
+    enforceConstraints(cell);
+
+    // sync DOM back in case constraints altered other fields
+    td.className = 'matrix-cell ' + cellClass(cell);
+    td.querySelector('.c-visible').checked = cell.visible;
+    td.querySelector('.c-required').checked = cell.required;
+    td.querySelector('.c-editable').value = cell.editable;
+    var roleSel = td.querySelector('.c-role-for');
+    roleSel.hidden = cell.editable !== 'role';
+    if (cell.editable === 'role' && cell.editableRole) roleSel.value = cell.editableRole;
+
+    scheduleSave();
+  });
+
+  // Bulk operations
+  document.getElementById('btnBulk').addEventListener('click', function(){
+    elBulkPanel.classList.toggle('open');
+  });
+
+  function forEachTargetCell(fn){
+    var level = currentLevel();
+    var cols = filteredColumnIds();
+    var statuses = getStatuses();
+    statuses.forEach(function(st){
+      cols.forEach(function(colId){
+        var cell = ensureCell(level, activeRole, st.id, colId);
+        fn(cell);
+      });
+    });
+  }
+
+  elBulkPanel.addEventListener('click', function(e){
+    var btn = e.target.closest('button[data-op]');
+    if (!btn) return;
+    var op = btn.dataset.op;
+    if (op==='show-all') forEachTargetCell(function(c){ c.visible=true; enforceConstraints(c); });
+    if (op==='hide-all') forEachTargetCell(function(c){ c.visible=false; enforceConstraints(c); });
+    if (op==='edit-all') forEachTargetCell(function(c){ c.visible=true; c.editable='all'; enforceConstraints(c); });
+    if (op==='edit-none') forEachTargetCell(function(c){ c.editable='none'; enforceConstraints(c); });
+    if (op==='req-on') forEachTargetCell(function(c){ if(c.visible && c.editable!=='none'){ c.required=true; enforceConstraints(c);} });
+    if (op==='req-off') forEachTargetCell(function(c){ c.required=false; enforceConstraints(c); });
+    scheduleSave();
+    renderTable();
+  });
+
+  document.getElementById('btnCopyRole').addEventListener('click', function(){
+    var source = elCopyRoleSource.value;
+    if (!source) return;
+    var level = currentLevel();
+    getStatuses().forEach(function(st){
+      getColumns().forEach(function(col){
+        var src = ensureCell(level, source, st.id, col.id);
+        state.matrix[level][activeRole][st.id][col.id] = enforceConstraints({
+          visible:src.visible, editable:src.editable, required:src.required, editableRole:src.editableRole
+        });
+      });
+    });
+    scheduleSave();
+    renderTable();
+  });
+
+  document.getElementById('btnCopyStatus').addEventListener('click', function(){
+    var source = elCopyStatusSource.value, target = elCopyStatusTarget.value;
+    if (!source || !target || source===target) return;
+    var level = currentLevel();
+    getColumns().forEach(function(col){
+      var src = ensureCell(level, activeRole, source, col.id);
+      state.matrix[level][activeRole][target][col.id] = enforceConstraints({
+        visible:src.visible, editable:src.editable, required:src.required, editableRole:src.editableRole
+      });
+    });
+    scheduleSave();
+    renderTable();
+  });
+
+  // Export / Import / Reset
+  document.getElementById('btnExport').addEventListener('click', function(){
+    state.updatedAt = new Date().toISOString();
+    var blob = new Blob([JSON.stringify(state, null, 2)], {type:'application/json'});
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url; a.download = 'column-matrix.json';
+    document.body.appendChild(a); a.click(); a.remove();
+    URL.revokeObjectURL(url);
+  });
+
+  document.getElementById('btnImport').addEventListener('click', function(){
+    document.getElementById('importFile').click();
+  });
+
+  document.getElementById('importFile').addEventListener('change', function(e){
+    var file = e.target.files[0];
+    if (!file) return;
+    var reader = new FileReader();
+    reader.onload = function(){
+      try{
+        var parsed = JSON.parse(reader.result);
+        var err = validateImport(parsed);
+        if (err){ alert('Ошибка импорта: ' + err); return; }
+        if (!parsed.settings) parsed.settings = {statusLevel:'order', activeRole:'manager'};
+        state = parsed;
+        if (ROLE_IDS.indexOf(state.settings.activeRole) !== -1) activeRole = state.settings.activeRole;
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+        renderAll();
+        alert('Матрица успешно импортирована.');
+      }catch(ex){
+        alert('Не удалось прочитать JSON: ' + ex.message);
+      }
+    };
+    reader.readAsText(file, 'utf-8');
+    e.target.value = '';
+  });
+
+  document.getElementById('btnReset').addEventListener('click', function(){
+    if (!confirm('Сбросить все настройки матрицы к значениям по умолчанию? Действие необратимо.')) return;
+    state = buildDefaultState();
+    activeRole = 'manager';
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    renderAll();
+  });
+
+  renderAll();
+})();
+</script>
+</body>
+</html>
