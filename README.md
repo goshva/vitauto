@@ -3,6 +3,7 @@
 ## Тех.задание
 
 [Актуальная редакция](https://docs.google.com/document/d/17jK7zyT7pWDc7zmUPWOIJxseA0mP3VPf4aYmWKyIxvk/edit?usp=sharing)
+
 [интерфейс таблицы](https://docs.google.com/spreadsheets/d/177IbIaOacwE4tzU8-2rb2femHnQBQHc3JdwEoQR47r4/edit?usp=sharing)
 ## Диаграммы схемы
 
