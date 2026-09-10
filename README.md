@@ -2,7 +2,7 @@
 
 ## Тех.задание
 
-[Актуальная редакция](https://docs.google.com/document/d/17jK7zyT7pWDc7zmUPWOIJxseA0mP3VPf4aYmWKyIxvk/edit?usp=sharing
+[Актуальная редакция](https://docs.google.com/document/d/17jK7zyT7pWDc7zmUPWOIJxseA0mP3VPf4aYmWKyIxvk/edit?usp=sharing)
 ## Диаграммы схемы
 
 [файл диаграм](https://drive.google.com/file/d/1qtIh12pP1lBkmtOTyyz-mF0mACr0Pvhk/view?usp=drive_link)
